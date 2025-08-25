@@ -37,6 +37,18 @@ function Home() {
     setSelectedId(null);
   };
 
+  const prepareAdd = () => {
+    // If no saved list exists (we are showing seed data), clear it so user starts fresh
+    const existing = localStorage.getItem('employees');
+    if (!existing) {
+      // empty in-memory array
+      Employee.length = 0;
+      try {
+        localStorage.setItem('employees', JSON.stringify([]));
+      } catch {}
+    }
+  };
+
   const handleEdit = (id, uname, age, desig, salary, photo, currency) => {
     localStorage.setItem('id', id);
     localStorage.setItem('uname', uname);
@@ -64,7 +76,7 @@ function Home() {
         </div>
         <div>
           <Link to="/add">
-            <Button variant="success" className="shadow-sm">
+            <Button variant="success" className="shadow-sm" onClick={prepareAdd}>
               Add Employee <FaUserPlus className="ms-1" />
             </Button>
           </Link>

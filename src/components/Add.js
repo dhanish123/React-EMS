@@ -18,6 +18,7 @@ function Add() {
   const [validated, setValidated] = useState(false);
   const [photo, setPhoto] = useState('');
   const [photoError, setPhotoError] = useState('');
+  const placeholderSvg = 'data:image/svg+xml;utf8,' + encodeURIComponent(`<?xml version="1.0" encoding="UTF-8"?><svg width="96" height="96" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg"><rect width="96" height="96" rx="16" fill="#eef2f7"/><circle cx="48" cy="36" r="14" fill="#cbd5e1"/><rect x="20" y="58" width="56" height="24" rx="12" fill="#cbd5e1"/></svg>`);
 
   const handlePhotoChange = (e) => {
     const file = e.target.files && e.target.files[0];
@@ -133,21 +134,13 @@ function Add() {
                   <Form.Control.Feedback type="invalid">Please enter a valid salary.</Form.Control.Feedback>
                 </Form.Group>
 
-                <Form.Group className="mb-3" controlId="formBasicCurrency">
-                  <Form.Label>Currency</Form.Label>
-                  <Form.Select value={currency} onChange={(e) => setCurrency(e.target.value)}>
-                    <option value="USD">US Dollar (USD)</option>
-                    <option value="INR">Indian Rupee (INR)</option>
-                    <option value="SAR">Saudi Riyal (SAR)</option>
-                    <option value="EUR">Euro (EUR)</option>
-                    <option value="GBP">British Pound (GBP)</option>
-                  </Form.Select>
-                </Form.Group>
+               
 
                 <Form.Group className="mb-3" controlId="formBasicPhoto">
                   <Form.Label>Photo (required)</Form.Label>
                   <div className={`file-drop ${photo ? '' : ''}`}>
                     <input type="file" accept="image/*" onChange={handlePhotoChange} />
+                    <img src={photo || placeholderSvg} alt="Preview" className="avatar avatar-lg" />
                     <div className="file-meta">
                       <div className="file-name">{photo ? 'Photo selected' : 'Choose a photo'}</div>
                       <div className="file-hint">Click to browse. PNG or JPG up to ~2MB.</div>

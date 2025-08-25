@@ -18,6 +18,7 @@ function Edit() {
   const [validated, setValidated] = useState(false);
   const [photoError, setPhotoError] = useState('');
   const [currency, setCurrency] = useState('USD');
+  const placeholderSvg = 'data:image/svg+xml;utf8,' + encodeURIComponent(`<?xml version="1.0" encoding="UTF-8"?><svg width="96" height="96" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg"><rect width="96" height="96" rx="16" fill="#eef2f7"/><circle cx="48" cy="36" r="14" fill="#cbd5e1"/><rect x="20" y="58" width="56" height="24" rx="12" fill="#cbd5e1"/></svg>`);
 
   useEffect(() => {
     setId(localStorage.getItem('id'));
@@ -127,6 +128,7 @@ function Edit() {
                   <Form.Label>Photo</Form.Label>
                   <div className="file-drop">
                     <input type="file" accept="image/*" onChange={handlePhotoChange} />
+                    <img src={photo || placeholderSvg} alt="Preview" className="avatar avatar-lg" />
                     <div className="file-meta">
                       <div className="file-name">{photo ? 'Photo selected' : 'Choose a photo'}</div>
                       <div className="file-hint">Click to browse. PNG or JPG up to ~2MB.</div>
@@ -159,7 +161,7 @@ function Edit() {
             <Card.Body>
               <img
                 className="img-fluid rounded"
-                src="https://th.bing.com/th/id/OIP.awAiMS1BCAQ2xS2lcdXGlwHaHH?pid=ImgDet&rs=1"
+                src={photo || placeholderSvg}
                 alt="Employee Management"
                 style={{ maxHeight: '220px', width: '100%', objectFit: 'contain' }}
               />
