@@ -6,7 +6,6 @@ import Card from 'react-bootstrap/Card';
 import Modal from 'react-bootstrap/Modal';
 import { FaUserPlus, FaUserEdit, FaRegTrashAlt, FaDownload } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
-import { utils as XLSXUtils, writeFile as writeXLSXFile } from 'xlsx';
 
 function Home() {
   const history = useNavigate();
@@ -91,27 +90,6 @@ function Home() {
     URL.revokeObjectURL(url);
   };
 
-  const exportXlsx = () => {
-    const stored = localStorage.getItem('employees');
-    const data = stored ? JSON.parse(stored) : Employee;
-    if (!data || data.length === 0) return;
-
-    const rows = data.map((e) => ({
-      ID: e.id,
-      Username: e.uname,
-      Age: e.age,
-      Designation: e.desig,
-      Salary: e.salary,
-      Currency: e.currency || 'USD',
-      Photo: e.photo || ''
-    }));
-
-    const worksheet = XLSXUtils.json_to_sheet(rows);
-    const workbook = XLSXUtils.book_new();
-    XLSXUtils.book_append_sheet(workbook, worksheet, 'Employees');
-    writeXLSXFile(workbook, 'employees.xlsx');
-  };
-
   const handleEdit = (id, uname, age, desig, salary, photo, currency) => {
     localStorage.setItem('id', id);
     localStorage.setItem('uname', uname);
@@ -139,10 +117,7 @@ function Home() {
         </div>
         <div className="d-flex gap-2">
           <Button className="shadow-sm" onClick={exportCsv} disabled={!Employee || Employee.length === 0}>
-            Export CSV <FaDownload className="ms-1" />
-          </Button>
-          <Button variant="outline-secondary" className="shadow-sm" onClick={exportXlsx} disabled={!Employee || Employee.length === 0}>
-            Export XLSX <FaDownload className="ms-1" />
+            Export <FaDownload className="ms-1" />
           </Button>
           <Link to="/add">
             <Button variant="success" className="shadow-sm" onClick={prepareAdd}>
