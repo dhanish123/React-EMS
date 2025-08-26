@@ -4,8 +4,9 @@ import Employee from './Employee';
 import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
 import Modal from 'react-bootstrap/Modal';
-import { FaUserPlus, FaUserEdit, FaRegTrashAlt } from 'react-icons/fa';
+import { FaUserPlus, FaUserEdit, FaRegTrashAlt, FaDownload } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
+import { utils as XLSXUtils, writeFile as writeXLSXFile } from 'xlsx';
 
 function Home() {
   const history = useNavigate();
@@ -49,6 +50,68 @@ function Home() {
     }
   };
 
+  const escapeCsv = (value) => {
+    if (value == null) return '';
+    const str = String(value);
+    if (/[",\n]/.test(str)) {
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+  };
+
+  const exportCsv = () => {
+    const stored = localStorage.getItem('employees');
+    const data = stored ? JSON.parse(stored) : Employee;
+    if (!data || data.length === 0) {
+      // nothing to export
+      return;
+    }
+    const headers = ['ID', 'Username', 'Age', 'Designation', 'Salary', 'Currency', 'Photo'];
+    const rows = data.map((e) => [
+      e.id,
+      e.uname,
+      e.age,
+      e.desig,
+      e.salary,
+      e.currency || 'USD',
+      e.photo || ''
+    ]);
+    const csvLines = [headers, ...rows]
+      .map((row) => row.map(escapeCsv).join(','))
+      .join('\n');
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + csvLines], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'employees.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportXlsx = () => {
+    const stored = localStorage.getItem('employees');
+    const data = stored ? JSON.parse(stored) : Employee;
+    if (!data || data.length === 0) return;
+
+    const rows = data.map((e) => ({
+      ID: e.id,
+      Username: e.uname,
+      Age: e.age,
+      Designation: e.desig,
+      Salary: e.salary,
+      Currency: e.currency || 'USD',
+      Photo: e.photo || ''
+    }));
+
+    const worksheet = XLSXUtils.json_to_sheet(rows);
+    const workbook = XLSXUtils.book_new();
+    XLSXUtils.book_append_sheet(workbook, worksheet, 'Employees');
+    writeXLSXFile(workbook, 'employees.xlsx');
+  };
+
   const handleEdit = (id, uname, age, desig, salary, photo, currency) => {
     localStorage.setItem('id', id);
     localStorage.setItem('uname', uname);
@@ -74,7 +137,13 @@ function Home() {
           <h1 className="page-title mb-1">Employee Management System</h1>
           <p className="muted-lead mb-0">Manage staff records and streamline HR tasks.</p>
         </div>
-        <div>
+        <div className="d-flex gap-2">
+          <Button className="shadow-sm" onClick={exportCsv} disabled={!Employee || Employee.length === 0}>
+            Export CSV <FaDownload className="ms-1" />
+          </Button>
+          <Button variant="outline-secondary" className="shadow-sm" onClick={exportXlsx} disabled={!Employee || Employee.length === 0}>
+            Export XLSX <FaDownload className="ms-1" />
+          </Button>
           <Link to="/add">
             <Button variant="success" className="shadow-sm" onClick={prepareAdd}>
               Add Employee <FaUserPlus className="ms-1" />
