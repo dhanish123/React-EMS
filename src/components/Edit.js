@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import Employee from './Employee';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import Card from 'react-bootstrap/Card';
 import { useNavigate } from 'react-router-dom';
+import { useEmployeeStore } from '../store/employeeStore';
 
 function Edit() {
   const [id, setId] = useState('');
@@ -32,7 +32,9 @@ function Edit() {
     if (storedPhoto) setPhoto(storedPhoto);
   }, []);
 
-  const index = Employee.map((item) => item.id).indexOf(id);
+  // ZUSTAND STORE USAGE - Much simpler than Redux!
+  const { updateEmployee } = useEmployeeStore();
+  
   const history = useNavigate();
 
   const handleUpdate = (e) => {
@@ -43,16 +45,18 @@ function Edit() {
       setPhotoError('Please upload a photo.');
       return;
     }
-    let emp = Employee[index];
-    emp.uname = uname;
-    emp.age = age;
-    emp.desig = desig;
-    emp.salary = salary;
-    emp.photo = photo;
-    emp.currency = currency;
-    try {
-      localStorage.setItem('employees', JSON.stringify(Employee));
-    } catch {}
+    
+    // ZUSTAND APPROACH: Direct function call to store
+    // In Redux: dispatch(updateEmployee(id, { uname, age, desig, salary, photo, currency }))
+    updateEmployee(id, {
+      uname,
+      age,
+      desig,
+      salary,
+      photo,
+      currency
+    });
+    
     history('/');
   };
 

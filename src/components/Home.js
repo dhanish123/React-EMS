@@ -1,16 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Table from 'react-bootstrap/Table';
-import Employee from './Employee';
 import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
 import Modal from 'react-bootstrap/Modal';
-import { FaUserPlus, FaUserEdit, FaRegTrashAlt, FaDownload } from 'react-icons/fa';
+import { FaUserPlus, FaUserEdit, FaRegTrashAlt, FaDownload, FaSearch, FaSort } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
+import { useEmployeeStore } from '../store/employeeStore';
 
 function Home() {
   const history = useNavigate();
   const [showDelete, setShowDelete] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
+
+  // ZUSTAND STORE USAGE - Much simpler than Redux!
+  // In Redux you'd need: useSelector, useDispatch, and action creators
+  // In Zustand, you directly destructure what you need from the store
+  const { 
+    employees, 
+    addEmployee,
+    deleteEmployee, 
+    setSearchTerm: setStoreSearchTerm,
+    setSorting,
+    getFilteredEmployees,
+    getTotalCount 
+  } = useEmployeeStore();
+
+  // ZUSTAND BENEFIT: Simple data loading without complex Redux thunks
+  // In Redux: useEffect(() => dispatch(fetchEmployees()), [dispatch])
+  useEffect(() => {
+    // Load sample data if store is empty
+    if (getTotalCount() === 0) {
+      const sampleEmployees = [
+        { id: '1', uname: 'John Doe', age: 30, desig: 'Software Engineer', salary: 75000, currency: 'USD', photo: '' },
+        { id: '2', uname: 'Jane Smith', age: 28, desig: 'Product Manager', salary: 85000, currency: 'USD', photo: '' },
+        { id: '3', uname: 'Mike Johnson', age: 35, desig: 'Senior Developer', salary: 95000, currency: 'USD', photo: '' }
+      ];
+      
+      sampleEmployees.forEach(emp => addEmployee(emp));
+    }
+  }, [getTotalCount, addEmployee]);
 
   const currency = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' });
 
@@ -21,13 +52,11 @@ function Home() {
 
   const confirmDelete = () => {
     if (selectedId == null) return;
-    const index = Employee.map((item) => item.id).indexOf(selectedId);
-    if (index !== -1) {
-      Employee.splice(index, 1);
-    }
-    try {
-      localStorage.setItem('employees', JSON.stringify(Employee));
-    } catch {}
+    
+    // ZUSTAND APPROACH - Direct function call, no dispatch needed!
+    // In Redux: dispatch(deleteEmployee(selectedId))
+    deleteEmployee(selectedId);
+    
     setShowDelete(false);
     setSelectedId(null);
     history('/');
@@ -37,16 +66,11 @@ function Home() {
     setSelectedId(null);
   };
 
+  // ZUSTAND BENEFIT: No need for complex localStorage management
+  // The store handles all state persistence automatically
   const prepareAdd = () => {
-    // If no saved list exists (we are showing seed data), clear it so user starts fresh
-    const existing = localStorage.getItem('employees');
-    if (!existing) {
-      // empty in-memory array
-      Employee.length = 0;
-      try {
-        localStorage.setItem('employees', JSON.stringify([]));
-      } catch {}
-    }
+    // This function is now much simpler with Zustand
+    // No need to manually manage localStorage or arrays
   };
 
   const escapeCsv = (value) => {
@@ -59,8 +83,10 @@ function Home() {
   };
 
   const exportCsv = () => {
-    const stored = localStorage.getItem('employees');
-    const data = stored ? JSON.parse(stored) : Employee;
+    // ZUSTAND BENEFIT: Direct access to store data, no localStorage needed!
+    // In Redux: const data = useSelector(state => state.employees)
+    const data = getFilteredEmployees(); // Uses store's filtered data
+    
     if (!data || data.length === 0) {
       // nothing to export
       return;
@@ -91,6 +117,12 @@ function Home() {
   };
 
   const handleEdit = (id, uname, age, desig, salary, photo, currency) => {
+    // ZUSTAND APPROACH: Store edit data in Zustand store instead of localStorage
+    // This is cleaner and more maintainable than scattered localStorage calls
+    // In Redux: dispatch(setEditData({ id, uname, age, desig, salary, photo, currency }))
+    
+    // For now, keeping localStorage for Edit component compatibility
+    // TODO: Update Edit component to use Zustand store
     localStorage.setItem('id', id);
     localStorage.setItem('uname', uname);
     localStorage.setItem('age', age);
@@ -116,7 +148,7 @@ function Home() {
           <p className="muted-lead mb-0">Manage staff records and streamline HR tasks.</p>
         </div>
         <div className="d-flex gap-2">
-          <Button className="shadow-sm" onClick={exportCsv} disabled={!Employee || Employee.length === 0}>
+          <Button className="shadow-sm" onClick={exportCsv} disabled={!getTotalCount() || getTotalCount() === 0}>
             Export <FaDownload className="ms-1" />
           </Button>
           <Link to="/add">
@@ -131,24 +163,78 @@ function Home() {
         <Card.Body>
           <div className="d-flex align-items-center justify-content-between flex-wrap">
             <h5 className="mb-3 mb-md-0">Employees</h5>
+            
+            {/* ZUSTAND FEATURE: Search and Sort Controls */}
+            {/* In Redux, you'd need separate action creators and selectors for each */}
+            <div className="d-flex gap-2 align-items-center">
+              <div className="input-group input-group-sm" style={{ width: '200px' }}>
+                <span className="input-group-text">
+                  <FaSearch />
+                </span>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Search employees..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setStoreSearchTerm(e.target.value); // Update Zustand store
+                  }}
+                />
+              </div>
+              
+              <select
+                className="form-select form-select-sm"
+                style={{ width: '120px' }}
+                value={sortBy}
+                onChange={(e) => {
+                  setSortBy(e.target.value);
+                  setSorting(e.target.value, sortOrder); // Update Zustand store
+                }}
+              >
+                <option value="uname">Name</option>
+                <option value="age">Age</option>
+                <option value="desig">Designation</option>
+                <option value="salary">Salary</option>
+              </select>
+              
+              <Button
+                size="sm"
+                variant="outline-secondary"
+                onClick={() => {
+                  const newOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+                  setSortOrder(newOrder);
+                  setSorting(sortBy, newOrder); // Update Zustand store
+                }}
+              >
+                <FaSort /> {sortOrder === 'asc' ? '↑' : '↓'}
+              </Button>
+            </div>
           </div>
-          {Employee && Employee.length > 0 ? (
-            <div className="table-responsive mt-3">
-              <Table hover className="align-middle">
-                <thead>
-                  <tr>
-                    <th>Photo</th>
-                    <th>ID</th>
-                    <th>Username</th>
-                    <th>Age</th>
-                    <th>Designation</th>
-                    <th>Salary</th>
-                    <th className="text-end">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Employee.map((item) => (
-                    <tr key={item.id}>
+          {/* ZUSTAND BENEFIT: Dynamic data from store with search/sort applied */}
+          {/* In Redux: const filteredEmployees = useSelector(state => state.filteredEmployees) */}
+          {(() => {
+            const filteredEmployees = getFilteredEmployees();
+            return filteredEmployees && filteredEmployees.length > 0 ? (
+              <div className="table-responsive mt-3">
+                <div className="mb-2 text-muted small">
+                  Showing {filteredEmployees.length} of {getTotalCount()} employees
+                </div>
+                <Table hover className="align-middle">
+                  <thead>
+                    <tr>
+                      <th>Photo</th>
+                      <th>ID</th>
+                      <th>Username</th>
+                      <th>Age</th>
+                      <th>Designation</th>
+                      <th>Salary</th>
+                      <th className="text-end">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredEmployees.map((item) => (
+                      <tr key={item.id}>
                       <td>
                         {item.photo ? (
                           <img src={item.photo} alt={item.uname} className="avatar avatar-sm" />
@@ -198,7 +284,8 @@ function Home() {
                 </Card.Body>
               </Card>
             </div>
-          )}
+          );
+        })()}
         </Card.Body>
       </Card>
 

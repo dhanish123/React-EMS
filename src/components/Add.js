@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Employee from './Employee';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Button from 'react-bootstrap/Button';
@@ -7,6 +6,7 @@ import Form from 'react-bootstrap/Form';
 import Card from 'react-bootstrap/Card';
 import { useNavigate } from 'react-router-dom';
 import uuid from 'react-uuid';
+import { useEmployeeStore } from '../store/employeeStore';
 
 function Add() {
   const [id, setId] = useState('');
@@ -35,6 +35,9 @@ function Add() {
     reader.readAsDataURL(file);
   };
 
+  // ZUSTAND STORE USAGE - Much simpler than Redux!
+  const { addEmployee } = useEmployeeStore();
+  
   let history = useNavigate();
   const handleAdd = (e) => {
     e.preventDefault();
@@ -59,7 +62,10 @@ function Add() {
 
     let ids = uuid();
     let uniqueId = ids.slice(0, 8);
-    Employee.push({
+    
+    // ZUSTAND APPROACH: Direct function call to store
+    // In Redux: dispatch(addEmployee({ id: uniqueId, ... }))
+    addEmployee({
       id: uniqueId,
       uname: uname.trim(),
       age: age,
@@ -68,9 +74,6 @@ function Add() {
       currency: currency,
       photo: photo,
     });
-    try {
-      localStorage.setItem('employees', JSON.stringify(Employee));
-    } catch {}
 
     history('/');
   };
