@@ -12,7 +12,7 @@ function Home() {
   const [showDelete, setShowDelete] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('name');
+  const [sortBy, setSortBy] = useState('uname'); // Changed from 'name' to 'uname'
   const [sortOrder, setSortOrder] = useState('asc');
 
   // ZUSTAND STORE USAGE - Much simpler than Redux!
@@ -22,11 +22,50 @@ function Home() {
     employees, 
     addEmployee,
     deleteEmployee, 
-    setSearchTerm: setStoreSearchTerm,
-    setSorting,
-    getFilteredEmployees,
     getTotalCount 
   } = useEmployeeStore();
+
+  // Local search and sort functionality
+  const getFilteredAndSortedEmployees = () => {
+    let filtered = [...employees];
+    
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(emp => 
+        emp.uname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.desig?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.age?.toString().includes(searchTerm) ||
+        emp.salary?.toString().includes(searchTerm)
+      );
+    }
+    
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+      
+      if (sortBy === 'age' || sortBy === 'salary') {
+        aValue = a[sortBy] || 0;
+        bValue = b[sortBy] || 0;
+      } else {
+        aValue = a[sortBy]?.toLowerCase() || '';
+        bValue = b[sortBy]?.toLowerCase() || '';
+      }
+      
+      if (sortOrder === 'asc') {
+        if (typeof aValue === 'number') {
+          return aValue - bValue;
+        }
+        return aValue.localeCompare(bValue);
+      } else {
+        if (typeof aValue === 'number') {
+          return bValue - aValue;
+        }
+        return bValue.localeCompare(aValue);
+      }
+    });
+    
+    return filtered;
+  };
 
   // ZUSTAND BENEFIT: Simple data loading without complex Redux thunks
   // In Redux: useEffect(() => dispatch(fetchEmployees()), [dispatch])
@@ -85,7 +124,7 @@ function Home() {
   const exportCsv = () => {
     // ZUSTAND BENEFIT: Direct access to store data, no localStorage needed!
     // In Redux: const data = useSelector(state => state.employees)
-    const data = getFilteredEmployees(); // Uses store's filtered data
+    const data = getFilteredAndSortedEmployees(); // Uses filtered and sorted data
     
     if (!data || data.length === 0) {
       // nothing to export
@@ -142,17 +181,17 @@ function Home() {
 
   return (
     <div className="mt-3 mt-md-4">
-      <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
         <div>
           <h1 className="page-title mb-1">Employee Management System</h1>
           <p className="muted-lead mb-0">Manage staff records and streamline HR tasks.</p>
         </div>
-        <div className="d-flex gap-2">
-          <Button className="shadow-sm" onClick={exportCsv} disabled={!getTotalCount() || getTotalCount() === 0}>
+        <div className="d-flex flex-column flex-sm-row gap-2 w-100 w-md-auto">
+          <Button className="shadow-sm w-100 w-sm-auto" onClick={exportCsv} disabled={!getTotalCount() || getTotalCount() === 0}>
             Export <FaDownload className="ms-1" />
           </Button>
-          <Link to="/add">
-            <Button variant="success" className="shadow-sm" onClick={prepareAdd}>
+          <Link to="/add" className="w-100 w-sm-auto d-inline-block">
+            <Button variant="success" className="shadow-sm w-100 w-sm-auto" onClick={prepareAdd}>
               Add Employee <FaUserPlus className="ms-1" />
             </Button>
           </Link>
@@ -161,13 +200,13 @@ function Home() {
 
       <Card className="card-shell mt-4">
         <Card.Body>
-          <div className="d-flex align-items-center justify-content-between flex-wrap">
-            <h5 className="mb-3 mb-md-0">Employees</h5>
+          <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
+            <h5 className="mb-0">Employees</h5>
             
             {/* ZUSTAND FEATURE: Search and Sort Controls */}
             {/* In Redux, you'd need separate action creators and selectors for each */}
-            <div className="d-flex gap-2 align-items-center">
-              <div className="input-group input-group-sm" style={{ width: '200px' }}>
+            <div className="d-flex flex-column flex-sm-row gap-2 align-items-stretch align-items-sm-center w-100 w-md-auto">
+              <div className="input-group input-group-sm w-100">
                 <span className="input-group-text">
                   <FaSearch />
                 </span>
@@ -178,64 +217,65 @@ function Home() {
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
-                    setStoreSearchTerm(e.target.value); // Update Zustand store
+                    // setStoreSearchTerm(e.target.value); // Update Zustand store
                   }}
                 />
               </div>
               
-              <select
-                className="form-select form-select-sm"
-                style={{ width: '120px' }}
-                value={sortBy}
-                onChange={(e) => {
-                  setSortBy(e.target.value);
-                  setSorting(e.target.value, sortOrder); // Update Zustand store
-                }}
-              >
-                <option value="uname">Name</option>
-                <option value="age">Age</option>
-                <option value="desig">Designation</option>
-                <option value="salary">Salary</option>
-              </select>
-              
-              <Button
-                size="sm"
-                variant="outline-secondary"
-                onClick={() => {
-                  const newOrder = sortOrder === 'asc' ? 'desc' : 'asc';
-                  setSortOrder(newOrder);
-                  setSorting(sortBy, newOrder); // Update Zustand store
-                }}
-              >
-                <FaSort /> {sortOrder === 'asc' ? '↑' : '↓'}
-              </Button>
+              <div className="d-flex gap-2 w-100 w-sm-auto">
+                <select
+                  className="form-select form-select-sm flex-fill"
+                  value={sortBy}
+                  onChange={(e) => {
+                    setSortBy(e.target.value);
+                    // setSorting(e.target.value, sortOrder); // Update Zustand store
+                  }}
+                >
+                  <option value="uname">Name</option>
+                  <option value="age">Age</option>
+                  <option value="desig">Designation</option>
+                  <option value="salary">Salary</option>
+                </select>
+                
+                <Button
+                  size="sm"
+                  variant="outline-secondary"
+                  onClick={() => {
+                    const newOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+                    setSortOrder(newOrder);
+                    // setSorting(sortBy, newOrder); // Update Zustand store
+                  }}
+                >
+                  <FaSort /> {sortOrder === 'asc' ? '↑' : '↓'}
+                </Button>
+              </div>
             </div>
           </div>
           {/* ZUSTAND BENEFIT: Dynamic data from store with search/sort applied */}
           {/* In Redux: const filteredEmployees = useSelector(state => state.filteredEmployees) */}
           {(() => {
-            const filteredEmployees = getFilteredEmployees();
+            const filteredEmployees = getFilteredAndSortedEmployees();
             return filteredEmployees && filteredEmployees.length > 0 ? (
               <div className="table-responsive mt-3">
                 <div className="mb-2 text-muted small">
                   Showing {filteredEmployees.length} of {getTotalCount()} employees
                 </div>
-                <Table hover className="align-middle">
+                <Table hover className="align-middle table-responsive-sm">
                   <thead>
                     <tr>
-                      <th>Photo</th>
+                      <th className="d-none d-sm-table-cell">Photo</th>
                       <th>ID</th>
                       <th>Username</th>
-                      <th>Age</th>
-                      <th>Designation</th>
-                      <th>Salary</th>
+                      <th className="d-none d-md-table-cell">Age</th>
+                      <th className="d-none d-lg-table-cell">Designation</th>
+                      <th className="d-none d-md-table-cell">Salary</th>
                       <th className="text-end">Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredEmployees.map((item) => (
                       <tr key={item.id}>
-                      <td>
+                      <td className="d-none d-sm-table-cell">
                         {item.photo ? (
                           <img src={item.photo} alt={item.uname} className="avatar avatar-sm" />
                         ) : (
@@ -244,13 +284,13 @@ function Home() {
                           </div>
                         )}
                       </td>
-                      <td>{item.id}</td>
-                      <td className="text-capitalize">{item.uname}</td>
-                      <td>{item.age}</td>
-                      <td>{item.desig}</td>
-                      <td>{new Intl.NumberFormat(undefined, { style: 'currency', currency: item.currency || 'USD' }).format(Number(item.salary) || 0)}</td>
+                      <td className="fw-bold">{item.id}</td>
+                      <td className="text-capitalize fw-medium">{item.uname}</td>
+                      <td className="d-none d-md-table-cell">{item.age}</td>
+                      <td className="d-none d-lg-table-cell text-truncate" style={{ maxWidth: '150px' }} title={item.desig}>{item.desig}</td>
+                      <td className="d-none d-md-table-cell">{new Intl.NumberFormat(undefined, { style: 'currency', currency: item.currency || 'USD' }).format(Number(item.salary) || 0)}</td>
                       <td>
-                        <div className="d-flex justify-content-end gap-2">
+                        <div className="d-flex justify-content-end gap-1 gap-sm-2">
                           <Link to="/edit">
                             <Button
                               size="sm"
@@ -278,8 +318,8 @@ function Home() {
                 <Card.Body className="text-center">
                   <h5 className="mb-2">No employees yet</h5>
                   <p className="muted-lead mb-3">Get started by adding your first employee.</p>
-                  <Link to="/add">
-                    <Button variant="success">Add Employee</Button>
+                  <Link to="/add" className="w-100 w-sm-auto d-inline-block">
+                    <Button variant="success" className="w-100 w-sm-auto">Add Employee</Button>
                   </Link>
                 </Card.Body>
               </Card>

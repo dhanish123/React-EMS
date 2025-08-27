@@ -27,7 +27,7 @@ export const useEmployeeStore = create((set, get) => ({
   error: null,
   currentEmployee: null,
   searchTerm: '',
-  sortBy: 'name',
+  sortBy: 'uname',
   sortOrder: 'asc',
 
   // ACTIONS - Similar to Redux actions but simpler
@@ -85,21 +85,36 @@ export const useEmployeeStore = create((set, get) => ({
     // Apply search filter
     if (state.searchTerm) {
       filtered = filtered.filter(emp => 
-        emp.name.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
-        emp.email.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
-        emp.phone.toLowerCase().includes(state.searchTerm.toLowerCase())
+        emp.uname?.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
+        emp.desig?.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
+        emp.age?.toString().includes(state.searchTerm) ||
+        emp.salary?.toString().includes(state.searchTerm)
       )
     }
 
     // Apply sorting
     filtered.sort((a, b) => {
-      const aValue = a[state.sortBy]?.toLowerCase() || ''
-      const bValue = b[state.sortBy]?.toLowerCase() || ''
+      let aValue, bValue;
+      
+      // Handle different data types for sorting
+      if (state.sortBy === 'age' || state.sortBy === 'salary') {
+        aValue = a[state.sortBy] || 0;
+        bValue = b[state.sortBy] || 0;
+      } else {
+        aValue = a[state.sortBy]?.toLowerCase() || '';
+        bValue = b[state.sortBy]?.toLowerCase() || '';
+      }
       
       if (state.sortOrder === 'asc') {
-        return aValue.localeCompare(bValue)
+        if (typeof aValue === 'number') {
+          return aValue - bValue;
+        }
+        return aValue.localeCompare(bValue);
       } else {
-        return bValue.localeCompare(aValue)
+        if (typeof aValue === 'number') {
+          return bValue - aValue;
+        }
+        return bValue.localeCompare(aValue);
       }
     })
 
@@ -126,7 +141,7 @@ export const useEmployeeStore = create((set, get) => ({
       error: null,
       currentEmployee: null,
       searchTerm: '',
-      sortBy: 'name',
+      sortBy: 'uname', // Changed from 'name' to 'uname'
       sortOrder: 'asc'
     })
   }
