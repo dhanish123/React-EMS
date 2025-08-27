@@ -22,7 +22,8 @@ function Home() {
     employees, 
     addEmployee,
     deleteEmployee, 
-    getTotalCount 
+    getTotalCount,
+    resetStore // Added resetStore to the store destructuring
   } = useEmployeeStore();
 
   // Local search and sort functionality
@@ -69,18 +70,45 @@ function Home() {
 
   // ZUSTAND BENEFIT: Simple data loading without complex Redux thunks
   // In Redux: useEffect(() => dispatch(fetchEmployees()), [dispatch])
+  // Removed sample data loading - app now starts with no employees
+  
+  // Clear any existing localStorage data to ensure fresh start
   useEffect(() => {
-    // Load sample data if store is empty
-    if (getTotalCount() === 0) {
-      const sampleEmployees = [
-        { id: '1', uname: 'John Doe', age: 30, desig: 'Software Engineer', salary: 75000, currency: 'USD', photo: '' },
-        { id: '2', uname: 'Jane Smith', age: 28, desig: 'Product Manager', salary: 85000, currency: 'USD', photo: '' },
-        { id: '3', uname: 'Mike Johnson', age: 35, desig: 'Senior Developer', salary: 95000, currency: 'USD', photo: '' }
-      ];
-      
-      sampleEmployees.forEach(emp => addEmployee(emp));
-    }
-  }, [getTotalCount, addEmployee]);
+    // Clear any existing employee data from localStorage
+    localStorage.removeItem('employees');
+    localStorage.removeItem('id');
+    localStorage.removeItem('uname');
+    localStorage.removeItem('age');
+    localStorage.removeItem('desg');
+    localStorage.removeItem('salary');
+    localStorage.removeItem('currency');
+    localStorage.removeItem('photo');
+    
+    // Clear sessionStorage as well
+    sessionStorage.removeItem('employees');
+    sessionStorage.removeItem('id');
+    sessionStorage.removeItem('uname');
+    sessionStorage.removeItem('age');
+    sessionStorage.removeItem('desg');
+    sessionStorage.removeItem('salary');
+    sessionStorage.removeItem('currency');
+    sessionStorage.removeItem('photo');
+    
+    // Reset the Zustand store to ensure it starts completely fresh
+    resetStore();
+    
+    // Debug: Verify store is empty
+    console.log('Store reset - Employee count:', getTotalCount());
+    
+    // Force a small delay and check again to ensure reset is complete
+    setTimeout(() => {
+      console.log('After delay - Employee count:', getTotalCount());
+      if (getTotalCount() > 0) {
+        console.warn('Store still has data after reset, forcing another reset');
+        resetStore();
+      }
+    }, 100);
+  }, [resetStore, getTotalCount]);
 
   const currency = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' });
 
